@@ -1,0 +1,67 @@
+name: Documentation generator
+
+on:
+    workflow_dispatch:
+        inputs:
+            documentation_scope:
+                description: 'The scope of documentation to generate: contract_only–create suggestions for contract documentation improvements; code_breakdown–generate a general project description document; both'
+                required: true
+                default: 'contract_only'
+                type: choice
+                options:
+                    - 'contract_only'
+                    - 'code_breakdown'
+                    - 'both'
+            code_folders:
+                description: 'Folders where the code is contained (should be a relative path)'
+                required: true
+                default: 'src'
+            pr_number:
+                description: 'Pull request number'
+                required: false
+            file_types_to_include:
+                description: 'File extensions to include for parsing'
+                required: true
+                default: '.sol'
+            file_names_to_include:
+                description: 'File names to include in parsing'
+                required: false
+                default: ''
+            folders_to_exclude:
+                description: 'Folders to exclude from parsing (should be relative paths)'
+                required: false
+                default: '.git,node_modules'
+            file_types_to_exclude:
+                description: 'File extensions to exclude from parsing'
+                required: false
+                default: '.gitignore,.json'
+            file_names_to_exclude:
+                description: 'File names to exclude from parsing'
+                required: false
+                default: 'LICENSE,README.md,CHANGELOG.md,prettierrc'
+    
+jobs:
+    checkout-and-run:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+            pull-requests: read
+        steps:
+            - uses: actions/checkout@v4
+            - name: Download and unpack binary
+              run: |
+                curl -L -o avenirlabs-ai-docu-gen-linux-v0.1.tar.gz https://github.com/pgb11/docgen/releases/download/v0.1-pre/avenirlabs-ai-docu-gen-linux-v0.1.tar.gz
+                tar -xzvf avenirlabs-ai-docu-gen-linux-v0.1.tar.gz
+            - name: Run file documentation script
+              run: |
+                mkdir generated_docs
+                ./avenirlabs-ai-docu-gen-linux
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+                OPENAI_ASSISTANT_ID: ${{ secrets.OPENAI_ASSISTANT_ID }}
+            - name: Create documentation archive
+              uses: actions/upload-artifact@v4
+              with:
+                name: Documentation
+                path: generated_docs

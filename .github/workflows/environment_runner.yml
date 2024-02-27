@@ -1,0 +1,27 @@
+name: Environment runner
+
+on:
+    workflow_dispatch:
+        inputs:
+            action:
+                description: 'An action we want to execute on our environment: setup or teardown'
+                required: true
+                default: 'setup'
+                type: choice
+                options:
+                    - 'setup'
+                    - 'teardown'
+
+jobs:
+    checkout-and-run:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Download and unpack binary
+              run: |
+                curl -L -o avenirlabs-ai-env-gen-linux-v0.1.tar.gz https://github.com/pgb11/docgen/releases/download/v0.1-pre/avenirlabs-ai-env-gen-linux-v0.1.tar.gz
+                tar -xzvf avenirlabs-ai-env-gen-linux-v0.1.tar.gz
+            - name: Run environment setup script
+              run: |
+                ./avenirlabs-ai-env-gen-linux --${{inputs.action}}
+              env:
+                OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
